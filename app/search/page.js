@@ -3,10 +3,36 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-import { Search, X, AlertTriangle, Activity, Pill, ChevronRight, Beaker, Loader2, Star, Wine, Baby, Stethoscope } from 'lucide-react';
+import { Search, X, AlertTriangle, Activity, Pill, ChevronRight, Beaker, Loader2, Star, Wine, Baby, Stethoscope, Users, Info } from 'lucide-react';
+import AgeRiskChart from '../../components/drug/AgeRiskChart';
+import useAuthStore from '../../lib/store/authStore';
 
-function DrugDetailPanel({ drug, onClose }) {
+function DrugDetailPanel({ drug, onClose, userAge }) {
   if (!drug) return null;
+  const [ageRisk, setAgeRisk] = useState(null);
+  const [ageProfile, setAgeProfile] = useState(null);
+  const [selectedAge, setSelectedAge] = useState(userAge || 35);
+  const [loadingRisk, setLoadingRisk] = useState(false);
+
+  useEffect(() => {
+    async function fetchAgeRisk() {
+      setLoadingRisk(true);
+      try {
+        const [riskRes, profileRes] = await Promise.all([
+          fetch(`/api/age-risk/${encodeURIComponent(drug.id)}?age=${selectedAge}`),
+          fetch(`/api/age-risk/${encodeURIComponent(drug.id)}?profile=true`)
+        ]);
+        setAgeRisk(await riskRes.json());
+        setAgeProfile(await profileRes.json());
+      } catch (err) {
+        console.error('Failed to fetch age risk:', err);
+      } finally {
+        setLoadingRisk(false);
+      }
+    }
+    fetchAgeRisk();
+  }, [drug.id, selectedAge]);
+
   const topSideEffects = drug.sideEffects?.slice(0, 15) || [];
   const maxCount = topSideEffects[0]?.count || 1;
 
@@ -44,39 +70,139 @@ function DrugDetailPanel({ drug, onClose }) {
           {drug.manufacturers?.length > 0 && <div className="glass-card-static p-3"><div className="text-white/40 text-xs mb-1">Manufacturer</div><div className="text-white text-sm font-medium truncate">{drug.manufacturers[0]}</div></div>}
         </div>
 
+        {/* ── Age Risk Analysis Section ── */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-semibold flex items-center gap-2">
+              <Users className="w-5 h-5 text-[#00d4ff]" /> Age-Based Risk Analysis
+            </h3>
+            <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1">
+              <span className="text-[10px] text-white/40 uppercase font-bold">Age:</span>
+              <input 
+                type="number" 
+                value={selectedAge} 
+                onChange={(e) => setSelectedAge(e.target.value)}
+                className="bg-transparent text-white text-xs font-bold w-10 outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="glass-card-static p-6 relative overflow-hidden">
+            {loadingRisk && (
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-[#00d4ff] animate-spin" />
+              </div>
+            )}
+
+            {ageRisk && (
+              <div className="relative z-0">
+                <div className="flex flex-col md:flex-row gap-6 items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white`} style={{ backgroundColor: ageRisk.riskColor }}>
+                        {ageRisk.riskLevel} Risk ({ageRisk.riskScore})
+                      </div>
+                      <span className="text-white/40 text-xs font-medium">{ageRisk.ageGroup?.label} ({ageRisk.ageGroup?.range})</span>
+                    </div>
+                    <p className="text-white/70 text-sm leading-relaxed mb-4">{ageRisk.explanation}</p>
+                    
+                    <div className="space-y-2">
+                      {ageRisk.recommendedAction?.map((rec, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs text-white/50">
+                          <div className="w-1 h-1 rounded-full bg-[#00d4ff] mt-1.5 shrink-0" />
+                          {rec}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Physiological Insight */}
+                    <div className="mt-4 p-3 rounded-lg bg-[#00d4ff]/5 border border-[#00d4ff]/10">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#00d4ff]" />
+                        <span className="text-[10px] text-[#00d4ff] uppercase font-black tracking-widest">Physiological Insight</span>
+                      </div>
+                      <p className="text-[11px] text-white/50 leading-relaxed italic">
+                        {ageRisk.ageGroup?.id === 'elderly' && "Elderly patients often experience reduced renal clearance and hepatic metabolism, increasing the risk of drug accumulation and toxicity. Lower starting doses are often recommended."}
+                        {['neonate', 'infant', 'child'].includes(ageRisk.ageGroup?.id) && "Pediatric patients have developing metabolic enzymes and higher total body water. Dosing must be precisely calculated by weight to avoid severe adverse outcomes."}
+                        {ageRisk.ageGroup?.id === 'adult' && "Standard adult metabolism assumed. However, individual variations in liver and kidney function can significantly alter drug processing and risk profile."}
+                        {ageRisk.ageGroup?.id === 'adolescent' && "Transitioning metabolism. Hormonal changes and rapid growth may affect drug distribution and response consistency."}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {ageProfile && (
+                    <div className="w-full md:w-[280px] shrink-0">
+                      <div className="text-[10px] text-white/30 uppercase font-bold mb-2 tracking-widest">Risk Across Age Groups</div>
+                      <AgeRiskChart data={ageProfile.profile} selectedAgeGroup={ageRisk.ageGroup?.id} />
+                    </div>
+                  )}
+                </div>
+
+                {ageRisk.factors?.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-white/[0.06]">
+                    <div className="text-[10px] text-white/30 uppercase font-bold mb-3 tracking-widest">Risk Factor Breakdown</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {ageRisk.factors.map((f, i) => (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                          <Info className="w-3.5 h-3.5 text-white/20 mt-0.5" />
+                          <div>
+                            <div className="text-white/80 text-xs font-medium">{f.factor}</div>
+                            <div className="text-white/30 text-[10px] leading-tight mt-1">{f.detail}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="mt-4 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10 flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-yellow-500/50 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-yellow-500/40 leading-tight italic">
+                Disclaimer: This analysis is derived from FDA adverse event data and clinical guidelines. 
+                It is not a substitute for professional medical advice. Always consult your doctor before starting or changing medications.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* ── Kaggle Enrichment: Rating, Pregnancy, Rx/OTC, Alcohol ── */}
         {(drug.userRating || drug.pregnancyCategory || drug.rxOtc || drug.alcoholInteraction) && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            {drug.userRating && (
-              <div className="glass-card-static p-3 text-center">
-                <Star className="w-4 h-4 text-[#f59e0b] mx-auto mb-1.5" />
-                <div className="text-white font-semibold text-lg">{drug.userRating}</div>
-                <div className="text-white/30 text-[10px]">User Rating</div>
-              </div>
-            )}
-            {drug.pregnancyCategory && drug.pregnancyCategory !== 'N' && (
-              <div className="glass-card-static p-3 text-center">
-                <Baby className="w-4 h-4 text-[#f472b6] mx-auto mb-1.5" />
-                <div className={`font-bold text-lg ${drug.pregnancyCategory === 'X' ? 'text-red-400' : drug.pregnancyCategory === 'D' ? 'text-orange-400' : 'text-white'}`}>
-                  Cat. {drug.pregnancyCategory}
+          <div className="mb-8">
+            <h3 className="text-white/60 text-sm font-semibold mb-4 flex items-center gap-2"><Star className="w-4 h-4" /> Clinical Metadata</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {drug.userRating && (
+                <div className="glass-card-static p-3 text-center">
+                  <Star className="w-4 h-4 text-[#f59e0b] mx-auto mb-1.5" />
+                  <div className="text-white font-semibold text-lg">{drug.userRating}</div>
+                  <div className="text-white/30 text-[10px]">User Rating</div>
                 </div>
-                <div className="text-white/30 text-[10px]">Pregnancy</div>
-              </div>
-            )}
-            {drug.rxOtc && (
-              <div className="glass-card-static p-3 text-center">
-                <Stethoscope className="w-4 h-4 text-[#00d4ff] mx-auto mb-1.5" />
-                <div className="text-white font-semibold text-lg">{drug.rxOtc}</div>
-                <div className="text-white/30 text-[10px]">{drug.rxOtc === 'Rx' ? 'Prescription' : drug.rxOtc === 'OTC' ? 'Over-the-counter' : 'Classification'}</div>
-              </div>
-            )}
-            {drug.alcoholInteraction && (
-              <div className="glass-card-static p-3 text-center border border-red-500/20">
-                <Wine className="w-4 h-4 text-red-400 mx-auto mb-1.5" />
-                <div className="text-red-400 font-bold text-sm">⚠ Avoid</div>
-                <div className="text-white/30 text-[10px]">Alcohol</div>
-              </div>
-            )}
+              )}
+              {drug.pregnancyCategory && drug.pregnancyCategory !== 'N' && (
+                <div className="glass-card-static p-3 text-center">
+                  <Baby className="w-4 h-4 text-[#f472b6] mx-auto mb-1.5" />
+                  <div className={`font-bold text-lg ${drug.pregnancyCategory === 'X' ? 'text-red-400' : drug.pregnancyCategory === 'D' ? 'text-orange-400' : 'text-white'}`}>
+                    Cat. {drug.pregnancyCategory}
+                  </div>
+                  <div className="text-white/30 text-[10px]">Pregnancy</div>
+                </div>
+              )}
+              {drug.rxOtc && (
+                <div className="glass-card-static p-3 text-center">
+                  <Stethoscope className="w-4 h-4 text-[#00d4ff] mx-auto mb-1.5" />
+                  <div className="text-white font-semibold text-lg">{drug.rxOtc}</div>
+                  <div className="text-white/30 text-[10px]">{drug.rxOtc === 'Rx' ? 'Prescription' : drug.rxOtc === 'OTC' ? 'Over-the-counter' : 'Classification'}</div>
+                </div>
+              )}
+              {drug.alcoholInteraction && (
+                <div className="glass-card-static p-3 text-center border border-red-500/20">
+                  <Wine className="w-4 h-4 text-red-400 mx-auto mb-1.5" />
+                  <div className="text-red-400 font-bold text-sm">⚠ Avoid</div>
+                  <div className="text-white/30 text-[10px]">Alcohol</div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -111,6 +237,8 @@ function DrugDetailPanel({ drug, onClose }) {
 }
 
 export default function SearchPage() {
+  const { user, init } = useAuthStore();
+  const [userProfile, setUserProfile] = useState(null);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
@@ -118,6 +246,19 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceRef = useRef(null);
+
+  useEffect(() => { init(); }, [init]);
+
+  useEffect(() => {
+    if (user) {
+      fetch('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('medguard_token')}` }
+      })
+        .then(r => r.json())
+        .then(setUserProfile)
+        .catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (query.length < 2) { setSuggestions([]); return; }
@@ -208,7 +349,15 @@ export default function SearchPage() {
         </div>
         {results.length===0&&!loading&&<div className="text-center py-20"><Search className="w-12 h-12 text-white/10 mx-auto mb-4" /><p className="text-white/30 text-lg">No drugs found</p></div>}
       </div>
-      <AnimatePresence>{selectedDrug && <DrugDetailPanel drug={selectedDrug} onClose={()=>setSelectedDrug(null)} />}</AnimatePresence>
+      <AnimatePresence>
+        {selectedDrug && (
+          <DrugDetailPanel 
+            drug={selectedDrug} 
+            onClose={() => setSelectedDrug(null)} 
+            userAge={userProfile?.age}
+          />
+        )}
+      </AnimatePresence>
       <Footer />
     </main>
   );

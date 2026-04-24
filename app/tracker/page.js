@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import useAuthStore from '../../lib/store/authStore';
-import { Pill, Plus, X, Calendar, Clock, Check, Trash2, Search, ChevronRight, Loader2, BarChart3 } from 'lucide-react';
+import { Pill, Plus, X, Calendar, Clock, Check, Trash2, Search, ChevronRight, Loader2, BarChart3, AlertTriangle, Info } from 'lucide-react';
 
 export default function TrackerPage() {
   const { user, token, init, loading: authLoading } = useAuthStore();
@@ -17,7 +17,11 @@ export default function TrackerPage() {
   const [suggestions, setSuggestions] = useState([]);
   const [showSugg, setShowSugg] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [ageRisk, setAgeRisk] = useState(null);
+  const [checkingRisk, setCheckingRisk] = useState(false);
   const debRef = useRef(null);
+  const riskDebRef = useRef(null);
   const router = useRouter();
 
   useEffect(() => { init(); }, [init]);
@@ -28,16 +32,41 @@ export default function TrackerPage() {
     fetch('/api/medications', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setMeds(d.medications || [])).catch(() => {});
   };
+  
+  useEffect(() => {
+    if (token) {
+      fetch('/api/auth/profile', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json()).then(setUserProfile).catch(() => {});
+    }
+  }, [token]);
+
   useEffect(fetchMeds, [token]);
 
   useEffect(() => {
-    if (drugName.length < 2) { setSuggestions([]); return; }
+    if (drugName.length < 2) { setSuggestions([]); setAgeRisk(null); return; }
+    
+    // Autocomplete search
     clearTimeout(debRef.current);
     debRef.current = setTimeout(() => {
       fetch(`/api/drugs/search?q=${encodeURIComponent(drugName)}&autocomplete=true`)
         .then(r => r.json()).then(d => { setSuggestions(d.suggestions || []); setShowSugg(true); });
     }, 200);
-  }, [drugName]);
+
+    // Age risk check
+    if (userProfile?.age) {
+      clearTimeout(riskDebRef.current);
+      riskDebRef.current = setTimeout(async () => {
+        setCheckingRisk(true);
+        try {
+          const res = await fetch(`/api/age-risk/${encodeURIComponent(drugName)}?age=${userProfile.age}`);
+          const data = await res.json();
+          if (data.riskLevel === 'high') setAgeRisk(data);
+          else setAgeRisk(null);
+        } catch { setAgeRisk(null); }
+        finally { setCheckingRisk(false); }
+      }, 500);
+    }
+  }, [drugName, userProfile?.age]);
 
   const addMed = async (e) => {
     e.preventDefault();
@@ -115,6 +144,23 @@ export default function TrackerPage() {
                     <option value="weekly">Weekly</option><option value="as-needed">As Needed</option>
                   </select>
                 </div>
+
+                <AnimatePresence>
+                  {ageRisk && (
+                    <motion.div initial={{ opacity:0,y:-10 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-10 }} className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4">
+                      <AlertTriangle className="w-6 h-6 text-red-500 shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-red-400 font-bold text-sm">High Risk Warning for Your Age ({userProfile.age}y)</h4>
+                        <p className="text-white/60 text-xs mt-1 leading-relaxed">{ageRisk.explanation}</p>
+                        <div className="flex gap-2 mt-3">
+                          {ageRisk.recommendedAction?.slice(0,2).map((a,i)=>(
+                            <span key={i} className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded border border-red-500/20 font-medium">{a}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <div className="flex gap-3 mt-4">
                   <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add Medication
