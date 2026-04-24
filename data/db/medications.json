@@ -18,5 +18,25 @@
     ],
     "active": true,
     "createdAt": "2026-04-24T02:32:08.039Z"
+  },
+  {
+    "id": "med_1777060191184_g4zb59xr8",
+    "userId": "user_1777059378324_8czbiojrv",
+    "drugName": "ASPIRIN + Tylenol",
+    "drugId": "",
+    "dosage": "Combo Set",
+    "schedule": "twice-daily",
+    "startDate": "2026-04-24",
+    "endDate": "",
+    "notes": "",
+    "adherenceLog": [
+      {
+        "date": "2026-04-24",
+        "taken": true,
+        "loggedAt": "2026-04-24T19:53:21.949Z"
+      }
+    ],
+    "active": true,
+    "createdAt": "2026-04-24T19:49:51.185Z"
   }
 ]

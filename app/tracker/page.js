@@ -11,8 +11,7 @@ export default function TrackerPage() {
   const { user, token, init, loading: authLoading } = useAuthStore();
   const [meds, setMeds] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [drugName, setDrugName] = useState('');
-  const [dosage, setDosage] = useState('');
+  const [drugsList, setDrugsList] = useState([{ name: '', dosage: '' }]);
   const [schedule, setSchedule] = useState('daily');
   const [suggestions, setSuggestions] = useState([]);
   const [showSugg, setShowSugg] = useState(false);
@@ -43,22 +42,23 @@ export default function TrackerPage() {
   useEffect(fetchMeds, [token]);
 
   useEffect(() => {
-    if (drugName.length < 2) { setSuggestions([]); setAgeRisk(null); return; }
+    const primaryDrug = drugsList[0]?.name || '';
+    if (primaryDrug.length < 2) { setSuggestions([]); setAgeRisk(null); return; }
     
-    // Autocomplete search
+    // Autocomplete search (based on the first drug for now)
     clearTimeout(debRef.current);
     debRef.current = setTimeout(() => {
-      fetch(`/api/drugs/search?q=${encodeURIComponent(drugName)}&autocomplete=true`)
+      fetch(`/api/drugs/search?q=${encodeURIComponent(primaryDrug)}&autocomplete=true`)
         .then(r => r.json()).then(d => { setSuggestions(d.suggestions || []); setShowSugg(true); });
     }, 200);
 
-    // Age risk check
+    // Age risk check (based on the primary drug)
     if (userProfile?.age) {
       clearTimeout(riskDebRef.current);
       riskDebRef.current = setTimeout(async () => {
         setCheckingRisk(true);
         try {
-          const res = await fetch(`/api/age-risk/${encodeURIComponent(drugName)}?age=${userProfile.age}`);
+          const res = await fetch(`/api/age-risk/${encodeURIComponent(primaryDrug)}?age=${userProfile.age}`);
           const data = await res.json();
           if (data.riskLevel === 'high') setAgeRisk(data);
           else setAgeRisk(null);
@@ -66,18 +66,36 @@ export default function TrackerPage() {
         finally { setCheckingRisk(false); }
       }, 500);
     }
-  }, [drugName, userProfile?.age]);
+  }, [drugsList[0]?.name, userProfile?.age]);
+
+  const addDrugField = () => setDrugsList([...drugsList, { name: '', dosage: '' }]);
+  const updateDrug = (index, field, value) => {
+    const newDrugs = [...drugsList];
+    newDrugs[index][field] = value;
+    setDrugsList(newDrugs);
+  };
+  const removeDrugField = (index) => {
+    if (drugsList.length > 1) {
+      setDrugsList(drugsList.filter((_, i) => i !== index));
+    }
+  };
 
   const addMed = async (e) => {
     e.preventDefault();
-    if (!drugName.trim()) return;
+    // Filter out empty drugs
+    const validDrugs = drugsList.filter(d => d.name.trim() !== '');
+    if (validDrugs.length === 0) return;
+    
+    // Combine them for the backend: "Aspirin (50mg) + Tylenol (100mg)"
+    const combinedName = validDrugs.map(d => d.dosage ? `${d.name.trim()} (${d.dosage})` : d.name.trim()).join(' + ');
+    
     setSaving(true);
     try {
       await fetch('/api/medications', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ drugName: drugName.trim(), dosage, schedule }),
+        body: JSON.stringify({ drugName: combinedName, dosage: validDrugs.length > 1 ? 'Combo Set' : validDrugs[0].dosage, schedule }),
       });
-      setDrugName(''); setDosage(''); setSchedule('daily'); setShowForm(false); fetchMeds();
+      setDrugsList([{ name: '', dosage: '' }]); setSchedule('daily'); setShowForm(false); fetchMeds();
     } catch {} finally { setSaving(false); }
   };
 
@@ -128,21 +146,49 @@ export default function TrackerPage() {
           {showForm && (
             <motion.div initial={{ opacity:0,height:0 }} animate={{ opacity:1,height:'auto' }} exit={{ opacity:0,height:0 }} className="overflow-hidden mb-8">
               <form onSubmit={addMed} className="glass-card p-6">
-                <h3 className="text-white font-semibold mb-4">Add Medication</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="relative">
-                    <input value={drugName} onChange={e=>setDrugName(e.target.value)} placeholder="Drug name" className="input-glass" required />
-                    {showSugg && suggestions.length > 0 && (
-                      <div className="absolute top-full mt-1 w-full glass-card-static overflow-hidden z-20">
-                        {suggestions.slice(0,5).map((s,i)=>(
-                          <button type="button" key={i} onClick={()=>{setDrugName(s.name);setShowSugg(false)}} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5">{s.name}</button>))}
-                      </div>)}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-semibold">Add Medication Regimen</h3>
+                  {drugsList.length > 1 && <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-1 rounded-md font-bold uppercase tracking-wider">Combination Set</span>}
+                </div>
+                
+                <div className="space-y-3 mb-4">
+                  {drugsList.map((drug, index) => (
+                    <div key={index} className="flex flex-col md:flex-row gap-3 items-start bg-white/[0.02] p-3 rounded-xl border border-white/[0.05]">
+                      <div className="relative flex-1 w-full">
+                        <input value={drug.name} onChange={e=>updateDrug(index, 'name', e.target.value)} placeholder={`Drug ${index + 1} (e.g., Aspirin)`} className="input-glass w-full" required />
+                        {index === 0 && showSugg && suggestions.length > 0 && (
+                          <div className="absolute top-full mt-1 w-full glass-card-static overflow-hidden z-20">
+                            {suggestions.slice(0,5).map((s,i)=>(
+                              <button type="button" key={i} onClick={()=>{updateDrug(0, 'name', s.name);setShowSugg(false)}} className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5">{s.name}</button>))}
+                          </div>)}
+                      </div>
+                      <div className="flex gap-2 w-full md:w-auto">
+                        <input value={drug.dosage} onChange={e=>updateDrug(index, 'dosage', e.target.value)} placeholder="Dosage (Optional)" className="input-glass flex-1 md:w-32" />
+                        {drugsList.length > 1 && (
+                          <button type="button" onClick={() => removeDrugField(index)} className="p-3 text-white/20 hover:text-red-400 hover:bg-white/5 rounded-xl transition-all">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <button type="button" onClick={addDrugField} className="text-[#00d4ff] text-xs font-medium flex items-center gap-1 hover:text-[#00d4ff]/80 transition-colors py-2">
+                    <Plus className="w-3 h-3" /> Add another drug to this regimen
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-white/40 text-xs mb-1.5 block">Schedule</label>
+                    <select value={schedule} onChange={e=>setSchedule(e.target.value)} className="input-glass w-full">
+                      <option value="daily">Daily</option>
+                      <option value="twice-daily">Twice Daily (e.g., Breakfast & Dinner)</option>
+                      <option value="three-daily">Three times a day</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="as-needed">As Needed</option>
+                    </select>
                   </div>
-                  <input value={dosage} onChange={e=>setDosage(e.target.value)} placeholder="Dosage (e.g., 50mg)" className="input-glass" />
-                  <select value={schedule} onChange={e=>setSchedule(e.target.value)} className="input-glass">
-                    <option value="daily">Daily</option><option value="twice-daily">Twice Daily</option>
-                    <option value="weekly">Weekly</option><option value="as-needed">As Needed</option>
-                  </select>
                 </div>
 
                 <AnimatePresence>

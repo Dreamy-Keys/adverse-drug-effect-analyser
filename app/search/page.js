@@ -13,17 +13,24 @@ function DrugDetailPanel({ drug, onClose, userAge }) {
   const [ageProfile, setAgeProfile] = useState(null);
   const [selectedAge, setSelectedAge] = useState(userAge || 35);
   const [loadingRisk, setLoadingRisk] = useState(false);
+  const [mlPrediction, setMlPrediction] = useState(null);
 
   useEffect(() => {
     async function fetchAgeRisk() {
       setLoadingRisk(true);
       try {
-        const [riskRes, profileRes] = await Promise.all([
+        const [riskRes, profileRes, predictionRes] = await Promise.all([
           fetch(`/api/age-risk/${encodeURIComponent(drug.id)}?age=${selectedAge}`),
-          fetch(`/api/age-risk/${encodeURIComponent(drug.id)}?profile=true`)
+          fetch(`/api/age-risk/${encodeURIComponent(drug.id)}?profile=true`),
+          fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ drug: drug.drugName })
+          })
         ]);
         setAgeRisk(await riskRes.json());
         setAgeProfile(await profileRes.json());
+        setMlPrediction(await predictionRes.json());
       } catch (err) {
         console.error('Failed to fetch age risk:', err);
       } finally {
@@ -44,7 +51,7 @@ function DrugDetailPanel({ drug, onClose, userAge }) {
         <div className="flex items-start justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-white font-['Poppins']">{drug.drugName}</h2>
-            {drug.brandNames?.length > 0 && <p className="text-[#00d4ff]/70 text-sm mt-1">{drug.brandNames.slice(0,3).join(', ')}</p>}
+            {drug.brandNames?.length > 0 && <p className="text-[#00d4ff]/70 text-sm mt-1">{drug.brandNames.slice(0, 3).join(', ')}</p>}
           </div>
           <button onClick={onClose} className="p-2 text-white/40 hover:text-white rounded-lg hover:bg-white/5 transition-all"><X className="w-5 h-5" /></button>
         </div>
@@ -78,9 +85,9 @@ function DrugDetailPanel({ drug, onClose, userAge }) {
             </h3>
             <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1">
               <span className="text-[10px] text-white/40 uppercase font-bold">Age:</span>
-              <input 
-                type="number" 
-                value={selectedAge} 
+              <input
+                type="number"
+                value={selectedAge}
                 onChange={(e) => setSelectedAge(e.target.value)}
                 className="bg-transparent text-white text-xs font-bold w-10 outline-none"
               />
@@ -105,7 +112,7 @@ function DrugDetailPanel({ drug, onClose, userAge }) {
                       <span className="text-white/40 text-xs font-medium">{ageRisk.ageGroup?.label} ({ageRisk.ageGroup?.range})</span>
                     </div>
                     <p className="text-white/70 text-sm leading-relaxed mb-4">{ageRisk.explanation}</p>
-                    
+
                     <div className="space-y-2">
                       {ageRisk.recommendedAction?.map((rec, i) => (
                         <div key={i} className="flex items-start gap-2 text-xs text-white/50">
@@ -129,9 +136,9 @@ function DrugDetailPanel({ drug, onClose, userAge }) {
                       </p>
                     </div>
                   </div>
-                  
+
                   {ageProfile && (
-                    <div className="w-full md:w-[280px] shrink-0">
+                    <div className="w-full md:w-[280px] shrink-0" style={{ minWidth: 0, minHeight: 0 }}>
                       <div className="text-[10px] text-white/30 uppercase font-bold mb-2 tracking-widest">Risk Across Age Groups</div>
                       <AgeRiskChart data={ageProfile.profile} selectedAgeGroup={ageRisk.ageGroup?.id} />
                     </div>
@@ -156,14 +163,91 @@ function DrugDetailPanel({ drug, onClose, userAge }) {
                 )}
               </div>
             )}
-            
+
             <div className="mt-4 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10 flex items-start gap-3">
               <AlertTriangle className="w-4 h-4 text-yellow-500/50 shrink-0 mt-0.5" />
               <p className="text-[10px] text-yellow-500/40 leading-tight italic">
-                Disclaimer: This analysis is derived from FDA adverse event data and clinical guidelines. 
+                Disclaimer: This analysis is derived from FDA adverse event data and clinical guidelines.
                 It is not a substitute for professional medical advice. Always consult your doctor before starting or changing medications.
               </p>
             </div>
+
+            {/* ── Comparative ML Prediction ── */}
+            {mlPrediction && (
+              <div className="mt-6 pt-6 border-t border-white/[0.06]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="px-2 py-1 bg-purple-500/20 border border-purple-500/30 rounded text-[10px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                      <Activity className="w-3 h-3" />
+                      Comparative Risk Model (Pediatric vs Adult)
+                    </div>
+                  </div>
+                  {mlPrediction.status === 'success' && (
+                    <div className="text-[10px] text-white/40 font-mono bg-white/[0.02] px-2 py-1 rounded">
+                      N={mlPrediction.pediatricTotal} Pediatric | N={mlPrediction.adultTotal} Adult Cases
+                    </div>
+                  )}
+                </div>
+
+                {mlPrediction.status === 'success' && mlPrediction.comparativeRisks?.length > 0 ? (
+                  <div className="space-y-4">
+                    {mlPrediction.comparativeRisks.map((risk, i) => (
+                      <div key={i} className="bg-white/[0.02] border border-white/[0.04] p-3 rounded-xl relative overflow-hidden">
+                        {risk.isHigherInKids && (
+                          <div className="absolute top-0 right-0 bg-red-500/80 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg">
+                            ELEVATED PEDIATRIC RISK
+                          </div>
+                        )}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                          <span className="text-white text-sm font-semibold">{risk.reaction}</span>
+                          <span className={`text-xs font-mono font-bold ${risk.isHigherInKids ? 'text-red-400' : 'text-green-400'}`}>
+                            {risk.multiplierLabel}
+                          </span>
+                        </div>
+
+                        {/* Comparison Bars */}
+                        <div className="space-y-2 mt-3">
+                          {/* Pediatric Bar */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] text-white/50 w-12 text-right uppercase font-bold tracking-wider">Child</span>
+                            <div className="flex-1 bg-white/[0.04] h-2 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(100, parseFloat(risk.pediatricRisk) * 3)}%` }}
+                                transition={{ duration: 1, delay: i * 0.1 }}
+                                className={`h-full ${risk.isHigherInKids ? 'bg-red-500' : 'bg-purple-500'}`}
+                              />
+                            </div>
+                            <span className="text-xs text-white/80 w-10 text-right font-mono">{risk.pediatricRisk}%</span>
+                          </div>
+
+                          {/* Adult Bar */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] text-white/50 w-12 text-right uppercase font-bold tracking-wider">Adult</span>
+                            <div className="flex-1 bg-white/[0.04] h-2 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(100, parseFloat(risk.adultRisk) * 3)}%` }}
+                                transition={{ duration: 1, delay: (i * 0.1) + 0.2 }}
+                                className="h-full bg-[#00d4ff]/60"
+                              />
+                            </div>
+                            <span className="text-xs text-white/80 w-10 text-right font-mono">{risk.adultRisk}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-white/[0.02] border border-white/[0.05] rounded-lg flex items-center justify-center text-center">
+                    <p className="text-white/40 text-xs">
+                      {mlPrediction.message || "Not enough comparative data for this drug."}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -209,7 +293,7 @@ function DrugDetailPanel({ drug, onClose, userAge }) {
         {drug.indications?.length > 0 && (
           <div className="mb-6">
             <h3 className="text-white/60 text-sm font-semibold mb-3 flex items-center gap-2"><Beaker className="w-4 h-4" /> Indications</h3>
-            <div className="flex flex-wrap gap-2">{drug.indications.slice(0,8).map((ind,i) => <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white/60 text-xs">{ind}</span>)}</div>
+            <div className="flex flex-wrap gap-2">{drug.indications.slice(0, 8).map((ind, i) => <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white/60 text-xs">{ind}</span>)}</div>
           </div>
         )}
 
@@ -256,7 +340,7 @@ export default function SearchPage() {
       })
         .then(r => r.json())
         .then(setUserProfile)
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [user]);
 
@@ -275,7 +359,7 @@ export default function SearchPage() {
     try {
       const res = await fetch(`/api/drugs/search?q=${encodeURIComponent(q)}&limit=30`);
       const data = await res.json(); setResults(data.results || []);
-    } catch {} finally { setLoading(false); }
+    } catch { } finally { setLoading(false); }
   }, [query]);
 
   const viewDrug = async (drug) => {
@@ -288,27 +372,27 @@ export default function SearchPage() {
     <main className="min-h-screen bg-[#0a0e14]">
       <Navbar />
       <div className="pt-[100px] pb-20 px-4 sm:px-6 max-w-6xl mx-auto">
-        <motion.div initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} className="text-center mb-12">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
           <h1 className="font-['Poppins'] font-bold text-3xl md:text-5xl text-white mb-4">Drug <span className="gradient-text-static">Search Engine</span></h1>
           <p className="text-white/40 text-lg max-w-xl mx-auto">Search across 3,800+ drugs by brand name, generic name, or drug class</p>
         </motion.div>
 
-        <motion.div initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} transition={{ delay:0.1 }} className="relative max-w-2xl mx-auto mb-12">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative max-w-2xl mx-auto mb-12">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 pointer-events-none" />
-            <input type="text" value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleSearch()}
-              onFocus={()=>suggestions.length>0&&setShowSuggestions(true)}
+            <input type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               placeholder="Search by drug name, brand, or class..."
               className="w-full bg-white/[0.04] border border-white/[0.1] rounded-2xl py-4 pr-28 text-white text-base focus:border-[#00d4ff]/50 focus:shadow-[0_0_30px_rgba(0,212,255,0.1)] outline-none transition-all placeholder:text-white/25" style={{ paddingLeft: '3rem' }} />
-            <button onClick={()=>handleSearch()} className="absolute right-2 top-1/2 -translate-y-1/2 btn-primary !py-2.5 !px-5 !rounded-xl text-sm">
+            <button onClick={() => handleSearch()} className="absolute right-2 top-1/2 -translate-y-1/2 btn-primary !py-2.5 !px-5 !rounded-xl text-sm">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
             </button>
           </div>
           <AnimatePresence>
             {showSuggestions && suggestions.length > 0 && (
-              <motion.div initial={{ opacity:0,y:-5 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-5 }} className="absolute top-full mt-2 w-full glass-card-static overflow-hidden z-20">
-                {suggestions.map((s,i) => (
-                  <button key={i} onClick={()=>{setQuery(s.name);setShowSuggestions(false);handleSearch(s.name);}}
+              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute top-full mt-2 w-full glass-card-static overflow-hidden z-20">
+                {suggestions.map((s, i) => (
+                  <button key={i} onClick={() => { setQuery(s.name); setShowSuggestions(false); handleSearch(s.name); }}
                     className="w-full text-left px-5 py-3 hover:bg-white/5 transition-colors flex items-center justify-between">
                     <div><span className="text-white text-sm font-medium">{s.name}</span>
                       {s.brandNames?.[0] && <span className="text-white/30 text-xs ml-2">({s.brandNames[0]})</span>}</div>
@@ -320,8 +404,8 @@ export default function SearchPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {results.map((drug, i) => (
-            <motion.div key={drug.id} initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} transition={{ delay:i*0.03 }}>
-              <div onClick={()=>viewDrug(drug)} className="glass-card p-5 cursor-pointer group h-full">
+            <motion.div key={drug.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+              <div onClick={() => viewDrug(drug)} className="glass-card p-5 cursor-pointer group h-full">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#10b981]/20 border border-[#00d4ff]/20 flex items-center justify-center">
@@ -329,7 +413,7 @@ export default function SearchPage() {
                     <div><h3 className="text-white font-semibold text-sm group-hover:text-[#00d4ff] transition-colors">{drug.drugName}</h3>
                       {drug.brandNames?.[0] && <p className="text-white/30 text-xs">{drug.brandNames[0]}</p>}</div>
                   </div>
-                  <span className={`badge text-[10px] ${drug.riskScore>=70?'badge-danger':drug.riskScore>=40?'badge-warning':'badge-success'}`}>{drug.riskScore}%</span>
+                  <span className={`badge text-[10px] ${drug.riskScore >= 70 ? 'badge-danger' : drug.riskScore >= 40 ? 'badge-warning' : 'badge-success'}`}>{drug.riskScore}%</span>
                 </div>
                 {drug.genericNames?.[0] && <p className="text-white/40 text-xs mb-2">Generic: {drug.genericNames[0]}</p>}
                 {(drug.rxOtc || drug.userRating || drug.pregnancyCategory) && (
@@ -347,13 +431,13 @@ export default function SearchPage() {
               </div>
             </motion.div>))}
         </div>
-        {results.length===0&&!loading&&<div className="text-center py-20"><Search className="w-12 h-12 text-white/10 mx-auto mb-4" /><p className="text-white/30 text-lg">No drugs found</p></div>}
+        {results.length === 0 && !loading && <div className="text-center py-20"><Search className="w-12 h-12 text-white/10 mx-auto mb-4" /><p className="text-white/30 text-lg">No drugs found</p></div>}
       </div>
       <AnimatePresence>
         {selectedDrug && (
-          <DrugDetailPanel 
-            drug={selectedDrug} 
-            onClose={() => setSelectedDrug(null)} 
+          <DrugDetailPanel
+            drug={selectedDrug}
+            onClose={() => setSelectedDrug(null)}
             userAge={userProfile?.age}
           />
         )}

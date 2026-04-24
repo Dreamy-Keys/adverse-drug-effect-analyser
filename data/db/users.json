@@ -16,5 +16,27 @@
     "allergies": [],
     "profiles": [],
     "createdAt": "2026-04-23T20:49:11.092Z"
+  },
+  {
+    "id": "user_1777053509197_bwyfdhvpu",
+    "name": "Shiva",
+    "email": "shivadhathan@gmail.com",
+    "passwordHash": "$2b$10$slcq9pz8.lCs4Y/noatviedYJsKZdQ.Lyx1QZVELjVHE02u07pb2C",
+    "allergies": [
+      "Pollen"
+    ],
+    "profiles": [],
+    "createdAt": "2026-04-24T17:58:29.384Z"
+  },
+  {
+    "id": "user_1777059378324_8czbiojrv",
+    "name": "Keshav",
+    "email": "keshav@mickey.com",
+    "passwordHash": "$2b$10$zYQwdd09lkt5KL7xsJWT8erFA6CO8xhewFf55qxe9ciaOkVWU5A1i",
+    "allergies": [
+      "aspirin"
+    ],
+    "profiles": [],
+    "createdAt": "2026-04-24T19:36:18.529Z"
   }
 ]

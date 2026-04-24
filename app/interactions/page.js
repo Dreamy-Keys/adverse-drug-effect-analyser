@@ -14,6 +14,7 @@ export default function InteractionsPage() {
   const [suggestions, setSuggestions] = useState([]);
   const [showSugg, setShowSugg] = useState(false);
   const [results, setResults] = useState(null);
+  const [ddiPrediction, setDdiPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const debRef = useRef(null);
 
@@ -28,17 +29,24 @@ export default function InteractionsPage() {
 
   const addDrug = (name) => {
     if (drugs.length >= 30 || drugs.includes(name)) return;
-    setDrugs([...drugs, name]); setInput(''); setShowSugg(false); setResults(null);
+    setDrugs([...drugs, name]); setInput(''); setShowSugg(false); setResults(null); setDdiPrediction(null);
   };
 
-  const removeDrug = (name) => { setDrugs(drugs.filter(d => d !== name)); setResults(null); };
+  const removeDrug = (name) => { setDrugs(drugs.filter(d => d !== name)); setResults(null); setDdiPrediction(null); };
 
   const checkInteractions = async () => {
     if (drugs.length < 2) return;
     setLoading(true);
+    setDdiPrediction(null);
     try {
       const res = await fetch('/api/interactions/check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ drugs }) });
       setResults(await res.json());
+
+      // Only run deep ML prediction if exactly 2 drugs
+      if (drugs.length === 2) {
+        const mlRes = await fetch('/api/predict/ddi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ drug1: drugs[0], drug2: drugs[1] }) });
+        setDdiPrediction(await mlRes.json());
+      }
     } catch {} finally { setLoading(false); }
   };
 
@@ -129,6 +137,39 @@ export default function InteractionsPage() {
                         </div>)}
                     </motion.div>))}
                 </div>)}
+
+              {/* ── ML DDI Prediction ── */}
+              {ddiPrediction && ddiPrediction.status === 'success' && (
+                <div className="mt-8 border-t border-purple-500/20 pt-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-lg text-xs text-purple-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4" /> AI Interaction Predictor
+                    </div>
+                  </div>
+                  
+                  <div className={`glass-card p-6 border ${ddiPrediction.predictedSeverity === 'high' ? 'border-red-500/30' : ddiPrediction.predictedSeverity === 'moderate' ? 'border-yellow-500/30' : 'border-purple-500/30'}`}>
+                    <h3 className="text-white font-semibold text-lg mb-2">Predictive Co-occurrence Model</h3>
+                    <p className="text-white/60 text-sm mb-4 leading-relaxed">{ddiPrediction.message}</p>
+                    
+                    {ddiPrediction.topCompoundedRisks && ddiPrediction.topCompoundedRisks.length > 0 && (
+                      <div>
+                        <h4 className="text-white/40 text-xs font-semibold mb-3 uppercase tracking-wider">Top Compounded Side Effects</h4>
+                        <div className="space-y-2">
+                          {ddiPrediction.topCompoundedRisks.map((risk, idx) => (
+                            <div key={idx} className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-lg flex items-center justify-between">
+                              <span className="text-white text-sm font-medium">{risk.reaction}</span>
+                              <div className="text-right">
+                                <span className="text-[10px] text-white/40 block mb-1">Individual Frequencies:</span>
+                                <span className="text-xs font-mono text-purple-400">{drugs[0]}: {risk.d1Freq}% | {drugs[1]}: {risk.d2Freq}%</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {results.interactionCount === 0 && (
                 <div className="glass-card p-8 text-center border border-green-500/20">
