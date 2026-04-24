@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { batchAgeRiskAnalysis, getAgeGroups } from '../../../lib/data/ageRisk';
+import { batchAgeRiskAnalysis, getAgeGroups } from '../../../../lib/data/ageRisk';
 
 export async function POST(request) {
   try {
