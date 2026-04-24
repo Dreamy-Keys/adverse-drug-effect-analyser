@@ -2,7 +2,7 @@
 
 **MedGuard AI** is a professional-grade, AI-powered drug safety analyzer specifically engineered for pediatric care. By leveraging raw data from the **FDA Adverse Event Reporting System (FAERS)**, MedGuard AI provides parents and healthcare providers with real-time, evidence-based insights into medication risks, interactions, and age-specific physiological considerations.
 
-[![Vercel Deployment](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=flat-square&logo=vercel)](https://medguardai.vercel.app)
+[![Vercel Deployment](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=flat-square&logo=vercel)](https://med-guard-ade.vercel.app)
 [![Next.js](https://img.shields.io/badge/Built%20with-Next.js%2015-blue?style=flat-square&logo=next.js)](https://nextjs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
