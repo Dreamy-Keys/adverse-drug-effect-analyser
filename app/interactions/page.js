@@ -17,6 +17,18 @@ export default function InteractionsPage() {
   const [ddiPrediction, setDdiPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const debRef = useRef(null);
+  const suggestionsRef = useRef(null);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setShowSugg(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (input.length < 2) { setSuggestions([]); return; }
@@ -68,8 +80,13 @@ export default function InteractionsPage() {
               placeholder="Type drug name..." className="input-glass !pl-11" />
             <AnimatePresence>
               {showSugg && suggestions.length > 0 && (
-                <motion.div initial={{ opacity:0,y:-5 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-5 }}
-                  className="absolute top-full mt-2 w-full glass-card-static overflow-hidden z-20">
+                <motion.div 
+                  ref={suggestionsRef}
+                  initial={{ opacity:0,y:-5 }} 
+                  animate={{ opacity:1,y:0 }} 
+                  exit={{ opacity:0,y:-5 }}
+                  className="absolute top-full mt-2 w-full bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-20"
+                >
                   {suggestions.map((s,i) => (
                     <button key={i} onClick={()=>addDrug(s.name)} className="w-full text-left px-5 py-3 hover:bg-white/5 transition-colors flex items-center justify-between">
                       <span className="text-white text-sm">{s.name}</span><ChevronRight className="w-4 h-4 text-white/20" />

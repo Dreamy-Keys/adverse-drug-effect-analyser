@@ -330,6 +330,18 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceRef = useRef(null);
+  const suggestionsRef = useRef(null);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => { init(); }, [init]);
 
@@ -390,7 +402,13 @@ export default function SearchPage() {
           </div>
           <AnimatePresence>
             {showSuggestions && suggestions.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute top-full mt-2 w-full glass-card-static overflow-hidden z-20">
+              <motion.div 
+                ref={suggestionsRef}
+                initial={{ opacity: 0, y: -5 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -5 }} 
+                className="absolute top-full mt-2 w-full bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-20"
+              >
                 {suggestions.map((s, i) => (
                   <button key={i} onClick={() => { setQuery(s.name); setShowSuggestions(false); handleSearch(s.name); }}
                     className="w-full text-left px-5 py-3 hover:bg-white/5 transition-colors flex items-center justify-between">
