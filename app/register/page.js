@@ -78,7 +78,7 @@ export default function RegisterPage() {
                 <label className="text-white/60 text-sm font-medium mb-2 block">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="input-glass !pl-11" required />
+                  <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email or Username" className="input-glass !pl-11" required />
                 </div>
               </div>
 
@@ -86,7 +86,7 @@ export default function RegisterPage() {
                 <label className="text-white/60 text-sm font-medium mb-2 block">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 6 characters" className="input-glass !pl-11" required minLength={6} />
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="input-glass !pl-11" required />
                 </div>
               </div>
 
