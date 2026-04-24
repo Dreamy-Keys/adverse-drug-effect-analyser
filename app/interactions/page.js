@@ -3,12 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-import { ShieldCheck, X, Plus, AlertTriangle, Loader2, Search, ChevronRight, Info } from 'lucide-react';
+import useAuthStore from '../../lib/store/authStore';
+import { ShieldCheck, X, Plus, AlertTriangle, Loader2, Search, ChevronRight, Info, AlertCircle } from 'lucide-react';
 
 const severityColors = { critical:'badge-danger', high:'badge-danger', moderate:'badge-warning', low:'badge-success', none:'badge-info' };
 const severityBg = { critical:'border-red-500/30 bg-red-500/5', high:'border-red-500/20 bg-red-500/5', moderate:'border-yellow-500/20 bg-yellow-500/5', low:'border-green-500/20 bg-green-500/5' };
 
 export default function InteractionsPage() {
+  const { user, token, init } = useAuthStore();
   const [drugs, setDrugs] = useState([]);
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -16,8 +18,30 @@ export default function InteractionsPage() {
   const [results, setResults] = useState(null);
   const [ddiPrediction, setDdiPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [detectedAllergies, setDetectedAllergies] = useState([]);
   const debRef = useRef(null);
   const suggestionsRef = useRef(null);
+
+  useEffect(() => { init(); }, [init]);
+
+  useEffect(() => {
+    if (token) {
+      fetch('/api/auth/profile', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json()).then(setUserProfile).catch(() => {});
+    }
+  }, [token]);
+
+  // Allergy Check
+  useEffect(() => {
+    const allergies = userProfile?.allergies || user?.allergies || [];
+    if (allergies.length === 0) return;
+    
+    const matches = drugs.filter(name => 
+      allergies.some(a => name.toLowerCase().includes(a.toLowerCase()) || a.toLowerCase().includes(name.toLowerCase()))
+    );
+    setDetectedAllergies([...new Set(matches)]);
+  }, [drugs, userProfile?.allergies, user?.allergies]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -102,6 +126,20 @@ export default function InteractionsPage() {
                   {d} <button onClick={()=>removeDrug(d)} className="hover:text-white transition-colors"><X className="w-3.5 h-3.5" /></button>
                 </span>))}
             </div>)}
+
+          <AnimatePresence>
+            {detectedAllergies.length > 0 && (
+              <motion.div initial={{ opacity:0,y:-10 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-10 }} className="mb-6 p-4 rounded-xl bg-red-500/20 border border-red-500/40 flex gap-4">
+                <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-1" />
+                <div>
+                  <h4 className="text-red-400 font-bold text-sm">Drug Allergy Warning</h4>
+                  <p className="text-white/80 text-xs mt-1 leading-relaxed">
+                    You have added <span className="font-bold text-white uppercase">{detectedAllergies.join(', ')}</span> which matches your reported allergies: <span className="font-bold text-red-400">{(userProfile?.allergies || user?.allergies || []).join(', ')}</span>.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <button onClick={checkInteractions} disabled={drugs.length<2||loading}
             className="btn-primary flex items-center gap-2 disabled:opacity-40">

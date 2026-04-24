@@ -7,13 +7,21 @@ import { Search, X, AlertTriangle, Activity, Pill, ChevronRight, Beaker, Loader2
 import AgeRiskChart from '../../components/drug/AgeRiskChart';
 import useAuthStore from '../../lib/store/authStore';
 
-function DrugDetailPanel({ drug, onClose, userAge }) {
+function DrugDetailPanel({ drug, onClose, userAge, userAllergies = [] }) {
   if (!drug) return null;
   const [ageRisk, setAgeRisk] = useState(null);
   const [ageProfile, setAgeProfile] = useState(null);
   const [selectedAge, setSelectedAge] = useState(userAge || 35);
   const [loadingRisk, setLoadingRisk] = useState(false);
   const [mlPrediction, setMlPrediction] = useState(null);
+
+  // Allergy Check logic
+  const allergyMatch = userAllergies.length > 0 ? userAllergies.filter(a => {
+    const allergen = a.toLowerCase();
+    const dName = drug.drugName.toLowerCase();
+    const bNames = (drug.brandNames || []).map(b => b.toLowerCase());
+    return dName.includes(allergen) || allergen.includes(dName) || bNames.some(b => b.includes(allergen));
+  }) : [];
 
   useEffect(() => {
     async function fetchAgeRisk() {
@@ -55,6 +63,19 @@ function DrugDetailPanel({ drug, onClose, userAge }) {
           </div>
           <button onClick={onClose} className="p-2 text-white/40 hover:text-white rounded-lg hover:bg-white/5 transition-all"><X className="w-5 h-5" /></button>
         </div>
+
+        {allergyMatch.length > 0 && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/20 border border-red-500/40 flex gap-4">
+            <AlertTriangle className="w-6 h-6 text-red-500 shrink-0 mt-1" />
+            <div>
+              <h4 className="text-red-400 font-bold text-sm">Drug Allergy Warning</h4>
+              <p className="text-white/80 text-xs mt-1 leading-relaxed">
+                This medication matches your reported allergies: <span className="font-bold text-red-400 uppercase">{allergyMatch.join(', ')}</span>. 
+                Taking this drug may cause a severe reaction.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="glass-card-static p-4 mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -456,7 +477,8 @@ export default function SearchPage() {
           <DrugDetailPanel
             drug={selectedDrug}
             onClose={() => setSelectedDrug(null)}
-            userAge={userProfile?.age}
+            userAge={userProfile?.age || user?.age}
+            userAllergies={userProfile?.allergies || user?.allergies}
           />
         )}
       </AnimatePresence>

@@ -71,15 +71,17 @@ export default function TrackerPage() {
 
   // Allergy Check
   useEffect(() => {
-    if (!userProfile?.allergies) return;
+    const allergies = userProfile?.allergies || user?.allergies || [];
+    if (allergies.length === 0) return;
+    
     const matches = drugsList
       .map(d => d.name.trim().toLowerCase())
       .filter(name => name.length > 1)
-      .filter(name => userProfile.allergies.some(a => 
+      .filter(name => allergies.some(a => 
         name.includes(a.toLowerCase()) || a.toLowerCase().includes(name)
       ));
     setDetectedAllergies([...new Set(matches)]);
-  }, [drugsList, userProfile?.allergies]);
+  }, [drugsList, userProfile?.allergies, user?.allergies]);
 
   const addDrugField = () => setDrugsList([...drugsList, { name: '', dosage: '' }]);
   const updateDrug = (index, field, value) => {
@@ -211,7 +213,7 @@ export default function TrackerPage() {
                       <div>
                         <h4 className="text-red-400 font-bold text-sm">Drug Allergy Warning</h4>
                         <p className="text-white/80 text-xs mt-1 leading-relaxed">
-                          You are attempting to add <span className="font-bold text-white uppercase">{detectedAllergies.join(', ')}</span> which matches your reported allergies: <span className="font-bold text-red-400">{userProfile.allergies.join(', ')}</span>.
+                          You are attempting to add <span className="font-bold text-white uppercase">{detectedAllergies.join(', ')}</span> which matches your reported allergies: <span className="font-bold text-red-400">{(userProfile?.allergies || user?.allergies || []).join(', ')}</span>.
                         </p>
                         <p className="text-white/40 text-[10px] mt-2 italic">Please confirm with your physician before proceeding.</p>
                       </div>
