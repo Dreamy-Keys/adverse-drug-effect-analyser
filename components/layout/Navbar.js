@@ -36,21 +36,23 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-[72px]">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#00d4ff] to-[#10b981] flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.3)] group-hover:shadow-[0_0_30px_rgba(0,212,255,0.5)] transition-all">
-                <Shield className="w-5 h-5 text-[#0a0e14]" strokeWidth={2.5} />
-              </div>
-              <span className="font-['Poppins'] font-bold text-lg tracking-tight">
-                <span className="text-white">Med</span>
-                <span className="text-[#00d4ff]">Guard</span>
-                <span className="text-[#10b981] text-sm ml-1 font-medium">AI</span>
-              </span>
-            </Link>
+          <div className="flex items-center h-[72px]">
+            {/* Left: Logo */}
+            <div className="flex-1 flex items-center">
+              <Link href="/" className="flex items-center gap-2.5 group">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#00d4ff] to-[#10b981] flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.3)] group-hover:shadow-[0_0_30px_rgba(0,212,255,0.5)] transition-all">
+                  <Shield className="w-5 h-5 text-[#0a0e14]" strokeWidth={2.5} />
+                </div>
+                <span className="font-['Poppins'] font-bold text-lg tracking-tight hidden sm:block">
+                  <span className="text-white">Med</span>
+                  <span className="text-[#00d4ff]">Guard</span>
+                  <span className="text-[#10b981] text-sm ml-1 font-medium">AI</span>
+                </span>
+              </Link>
+            </div>
 
-            {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-1">
+            {/* Center: Desktop Nav */}
+            <div className="hidden md:flex items-center justify-center gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -62,43 +64,45 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* Auth Buttons */}
-            <div className="hidden md:flex items-center gap-3">
-              {user ? (
-                <div className="flex items-center gap-3">
-                  <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-[14px] text-white/80 hover:text-white rounded-lg hover:bg-white/[0.05] transition-all">
-                    <LayoutDashboard className="w-4 h-4" />
-                    Dashboard
-                  </Link>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08]">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00d4ff] to-[#10b981] flex items-center justify-center">
-                      <User className="w-3.5 h-3.5 text-[#0a0e14]" />
+            {/* Right: Auth Buttons */}
+            <div className="flex-1 flex items-center justify-end gap-3">
+              <div className="hidden md:flex items-center gap-3">
+                {user ? (
+                  <div className="flex items-center gap-3">
+                    <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-[14px] text-white/80 hover:text-white rounded-lg hover:bg-white/[0.05] transition-all">
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </Link>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08]">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00d4ff] to-[#10b981] flex items-center justify-center">
+                        <User className="w-3.5 h-3.5 text-[#0a0e14]" />
+                      </div>
+                      <span className="text-sm text-white/80 font-medium">{user.name?.split(' ')[0]}</span>
                     </div>
-                    <span className="text-sm text-white/80 font-medium">{user.name?.split(' ')[0]}</span>
+                    <button onClick={logout} className="p-2 text-white/40 hover:text-red-400 transition-colors rounded-lg hover:bg-white/[0.05]">
+                      <LogOut className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button onClick={logout} className="p-2 text-white/40 hover:text-red-400 transition-colors rounded-lg hover:bg-white/[0.05]">
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <Link href="/login" className="px-5 py-2 text-[14px] text-white/80 hover:text-white font-medium rounded-lg hover:bg-white/[0.05] transition-all">
-                    Sign In
-                  </Link>
-                  <Link href="/register" className="btn-primary text-sm !py-2.5 !px-5 rounded-xl">
-                    Get Started
-                  </Link>
-                </>
-              )}
-            </div>
+                ) : (
+                  <>
+                    <Link href="/login" className="px-5 py-2 text-[14px] text-white/80 hover:text-white font-medium rounded-lg hover:bg-white/[0.05] transition-all">
+                      Sign In
+                    </Link>
+                    <Link href="/register" className="btn-primary text-sm !py-2.5 !px-5 rounded-xl">
+                      Get Started
+                    </Link>
+                  </>
+                )}
+              </div>
 
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 text-white/80 hover:text-white rounded-lg hover:bg-white/[0.05] transition-all"
-            >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+              {/* Mobile Menu Toggle */}
+              <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="md:hidden p-2 text-white/80 hover:text-white rounded-lg hover:bg-white/[0.05] transition-all"
+              >
+                {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
         </div>
       </motion.nav>

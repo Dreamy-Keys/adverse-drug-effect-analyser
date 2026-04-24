@@ -38,25 +38,5 @@
     ],
     "active": true,
     "createdAt": "2026-04-24T19:49:51.185Z"
-  },
-  {
-    "id": "med_1777065670451_ptc1a5h6q",
-    "userId": "user_1777065633545_syazdevy3",
-    "drugName": "ASPIRIN (23) + Penicillin",
-    "drugId": "",
-    "dosage": "Combo Set",
-    "schedule": "daily",
-    "startDate": "2026-04-24",
-    "endDate": "",
-    "notes": "",
-    "adherenceLog": [
-      {
-        "date": "2026-04-24",
-        "taken": true,
-        "loggedAt": "2026-04-24T21:21:12.666Z"
-      }
-    ],
-    "active": true,
-    "createdAt": "2026-04-24T21:21:10.451Z"
   }
 ]
