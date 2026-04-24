@@ -83,7 +83,7 @@ export default function Footer() {
             © 2026 MedGuard AI. Data sourced from FDA Adverse Event Reporting System.
           </p>
           <p className="text-white/30 text-xs flex items-center gap-1">
-            Built with <Heart className="w-3 h-3 text-red-400" /> for safer healthcare
+            Built with <Heart className="w-3 h-3 text-red-400" /> for safer healthcare, Half-Byte team.
           </p>
         </div>
       </div>
