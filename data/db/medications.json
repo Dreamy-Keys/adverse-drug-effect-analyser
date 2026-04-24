@@ -38,5 +38,25 @@
     ],
     "active": true,
     "createdAt": "2026-04-24T19:49:51.185Z"
+  },
+  {
+    "id": "med_1777074614387_g5w1e8elr",
+    "userId": "user_1777065633545_syazdevy3",
+    "drugName": "ASPIRIN (10)",
+    "drugId": "",
+    "dosage": "10",
+    "schedule": "daily",
+    "startDate": "2026-04-24",
+    "endDate": "",
+    "notes": "",
+    "adherenceLog": [
+      {
+        "date": "2026-04-24",
+        "taken": true,
+        "loggedAt": "2026-04-24T23:50:16.852Z"
+      }
+    ],
+    "active": true,
+    "createdAt": "2026-04-24T23:50:14.387Z"
   }
 ]
