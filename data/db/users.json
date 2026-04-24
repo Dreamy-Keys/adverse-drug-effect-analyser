@@ -1,0 +1,20 @@
+[
+  {
+    "id": "user_1776974044557_tll7l6cg2",
+    "name": "Test User",
+    "email": "test@example.com",
+    "passwordHash": "$2b$10$74qRVT/bbAwc1NMvQ92h/uEpgMZrSoZd1mgvVOPijxQYarHi8fbDq",
+    "allergies": [],
+    "profiles": [],
+    "createdAt": "2026-04-23T19:54:04.644Z"
+  },
+  {
+    "id": "user_1776977350979_7ux1xk2h5",
+    "name": "Hemal Gowda S",
+    "email": "hemalgowda18@gmail.com",
+    "passwordHash": "$2b$10$fqikGHi2cBw9LbiJ0G2pyeQww9WrBpbec45E/JkOqG0ui7UucOWWq",
+    "allergies": [],
+    "profiles": [],
+    "createdAt": "2026-04-23T20:49:11.092Z"
+  }
+]

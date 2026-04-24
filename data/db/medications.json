@@ -1,0 +1,22 @@
+[
+  {
+    "id": "med_1776997928039_8ddrx87c1",
+    "userId": "user_1776977350979_7ux1xk2h5",
+    "drugName": "paracetamol Brand names: Panadol, Calpol, Tylenol , Alvedon",
+    "drugId": "",
+    "dosage": "500",
+    "schedule": "twice-daily",
+    "startDate": "2026-04-24",
+    "endDate": "",
+    "notes": "",
+    "adherenceLog": [
+      {
+        "date": "2026-04-24",
+        "taken": true,
+        "loggedAt": "2026-04-24T02:32:59.665Z"
+      }
+    ],
+    "active": true,
+    "createdAt": "2026-04-24T02:32:08.039Z"
+  }
+]
