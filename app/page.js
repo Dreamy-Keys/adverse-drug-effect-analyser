@@ -96,7 +96,6 @@ const features = [
     gradient: 'from-[#ef4444] to-[#dc2626]',
     span: 'md:col-span-1 md:row-span-1',
   },
-  },
 ];
 
 const steps = [
