@@ -21,7 +21,6 @@ export default function Navbar() {
     { href: '/search', label: 'Drug Search' },
     { href: '/interactions', label: 'Interactions' },
     { href: '/tracker', label: 'Tracker' },
-    { href: '/identify', label: 'Pill ID' },
     { href: '/alerts', label: 'Alerts' },
   ];
 

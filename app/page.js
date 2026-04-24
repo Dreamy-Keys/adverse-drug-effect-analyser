@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import {
-  Search, ShieldCheck, Pill, Activity, Bell, ScanLine,
+  Search, ShieldCheck, Pill, Activity, Bell,
   ArrowRight, Zap, Database, Brain, ChevronRight,
   Heart, TrendingUp, AlertTriangle, Users
 } from 'lucide-react';
@@ -96,13 +96,6 @@ const features = [
     gradient: 'from-[#ef4444] to-[#dc2626]',
     span: 'md:col-span-1 md:row-span-1',
   },
-  {
-    icon: ScanLine,
-    title: 'Pill Identifier',
-    desc: 'Identify unknown pills by color, shape, and imprint markings.',
-    href: '/identify',
-    gradient: 'from-[#06b6d4] to-[#0891b2]',
-    span: 'md:col-span-1 md:row-span-1',
   },
 ];
 

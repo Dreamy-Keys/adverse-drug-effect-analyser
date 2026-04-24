@@ -31,7 +31,7 @@ export default function Footer() {
           <div>
             <h4 className="text-white/80 font-semibold text-sm mb-4 tracking-wide uppercase">Features</h4>
             <div className="flex flex-col gap-2.5">
-              {['Drug Search', 'Interaction Checker', 'Medication Tracker', 'Pill Identifier', 'Alerts'].map(item => (
+              {['Drug Search', 'Interaction Checker', 'Medication Tracker', 'Alerts'].map(item => (
                 <Link key={item} href={`/${item.toLowerCase().replace(/ /g, '-').replace('checker', '').replace('drug-', '').replace('-identifier', '')}`}
                   className="text-white/40 text-sm hover:text-[#00d4ff] transition-colors">{item}</Link>
               ))}
