@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import useAuthStore from '../../lib/store/authStore';
-import { Pill, Plus, X, Calendar, Clock, Check, Trash2, Search, ChevronRight, Loader2, BarChart3, AlertTriangle, Info } from 'lucide-react';
+import { Pill, Plus, X, Calendar, Clock, Check, Trash2, Search, ChevronRight, Loader2, BarChart3, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 
 export default function TrackerPage() {
   const { user, token, init, loading: authLoading } = useAuthStore();
@@ -18,6 +18,7 @@ export default function TrackerPage() {
   const [saving, setSaving] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [ageRisk, setAgeRisk] = useState(null);
+  const [detectedAllergies, setDetectedAllergies] = useState([]);
   const [checkingRisk, setCheckingRisk] = useState(false);
   const debRef = useRef(null);
   const riskDebRef = useRef(null);
@@ -67,6 +68,18 @@ export default function TrackerPage() {
       }, 500);
     }
   }, [drugsList[0]?.name, userProfile?.age]);
+
+  // Allergy Check
+  useEffect(() => {
+    if (!userProfile?.allergies) return;
+    const matches = drugsList
+      .map(d => d.name.trim().toLowerCase())
+      .filter(name => name.length > 1)
+      .filter(name => userProfile.allergies.some(a => 
+        name.includes(a.toLowerCase()) || a.toLowerCase().includes(name)
+      ));
+    setDetectedAllergies([...new Set(matches)]);
+  }, [drugsList, userProfile?.allergies]);
 
   const addDrugField = () => setDrugsList([...drugsList, { name: '', dosage: '' }]);
   const updateDrug = (index, field, value) => {
@@ -192,7 +205,20 @@ export default function TrackerPage() {
                 </div>
 
                 <AnimatePresence>
-                  {ageRisk && (
+                  {detectedAllergies.length > 0 && (
+                    <motion.div initial={{ opacity:0,y:-10 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-10 }} className="mt-4 p-4 rounded-xl bg-red-500/20 border border-red-500/40 flex gap-4">
+                      <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-1" />
+                      <div>
+                        <h4 className="text-red-400 font-bold text-sm">Drug Allergy Warning</h4>
+                        <p className="text-white/80 text-xs mt-1 leading-relaxed">
+                          You are attempting to add <span className="font-bold text-white uppercase">{detectedAllergies.join(', ')}</span> which matches your reported allergies: <span className="font-bold text-red-400">{userProfile.allergies.join(', ')}</span>.
+                        </p>
+                        <p className="text-white/40 text-[10px] mt-2 italic">Please confirm with your physician before proceeding.</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {ageRisk && !detectedAllergies.length && (
                     <motion.div initial={{ opacity:0,y:-10 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-10 }} className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4">
                       <AlertTriangle className="w-6 h-6 text-red-500 shrink-0 mt-1" />
                       <div>
