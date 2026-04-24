@@ -12,8 +12,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00d4ff] to-[#10b981] flex items-center justify-center">
+            <Link href="/" className="flex items-center gap-2.5 mb-4 group">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00d4ff] to-[#10b981] flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(0,212,255,0.3)] transition-all">
                 <Shield className="w-4 h-4 text-[#0a0e14]" strokeWidth={2.5} />
               </div>
               <span className="font-['Poppins'] font-bold text-base">
@@ -21,7 +21,7 @@ export default function Footer() {
                 <span className="text-[#00d4ff]">Guard</span>
                 <span className="text-[#10b981] text-xs ml-0.5">AI</span>
               </span>
-            </div>
+            </Link>
             <p className="text-white/40 text-sm leading-relaxed">
               AI-powered drug safety analysis backed by real FDA adverse event data.
             </p>
@@ -47,8 +47,14 @@ export default function Footer() {
           <div>
             <h4 className="text-white/80 font-semibold text-sm mb-4 tracking-wide uppercase">Resources</h4>
             <div className="flex flex-col gap-2.5">
-              {['API Documentation', 'OpenFDA Data', 'Safety Guidelines', 'Privacy Policy'].map(item => (
-                <span key={item} className="text-white/40 text-sm cursor-default">{item}</span>
+              {[
+                { label: 'API Documentation', href: '/search' },
+                { label: 'OpenFDA Data', href: 'https://open.fda.gov' },
+                { label: 'Safety Guidelines', href: '/alerts' },
+                { label: 'Privacy Policy', href: '#' },
+              ].map(item => (
+                <Link key={item.label} href={item.href}
+                  className="text-white/40 text-sm hover:text-[#00d4ff] transition-colors">{item.label}</Link>
               ))}
             </div>
           </div>
@@ -57,10 +63,14 @@ export default function Footer() {
           <div>
             <h4 className="text-white/80 font-semibold text-sm mb-4 tracking-wide uppercase">Connect</h4>
             <div className="flex gap-3">
-              {[Globe, MessageCircle, Mail].map((Icon, i) => (
-                <div key={i} className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-white/40 hover:text-[#00d4ff] hover:border-[#00d4ff]/30 transition-all cursor-pointer">
-                  <Icon className="w-4 h-4" />
-                </div>
+              {[
+                { Icon: Globe, href: 'https://github.com/Dreamy-Keys/adverse-drug-effect-analyser' },
+                { Icon: MessageCircle, href: '#' },
+                { Icon: Mail, href: 'mailto:contact@medguard.ai' }
+              ].map((item, i) => (
+                <Link key={i} href={item.href} className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-white/40 hover:text-[#00d4ff] hover:border-[#00d4ff]/30 transition-all cursor-pointer">
+                  <item.Icon className="w-4 h-4" />
+                </Link>
               ))}
             </div>
           </div>
