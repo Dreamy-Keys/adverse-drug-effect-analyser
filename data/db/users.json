@@ -47,5 +47,16 @@
     "allergies": [],
     "profiles": [],
     "createdAt": "2026-04-24T20:49:05.184Z"
+  },
+  {
+    "id": "user_1777065633545_syazdevy3",
+    "name": "Shiv",
+    "email": "shiva@hotmail.com",
+    "passwordHash": "$2b$10$06.bd3OI9gwLm2ZqgcG4vexxoQ4iD8nPdicxvkPFZctyhF4nwCnUO",
+    "allergies": [
+      "Aspirin"
+    ],
+    "profiles": [],
+    "createdAt": "2026-04-24T21:20:33.780Z"
   }
 ]

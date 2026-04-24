@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Pediatric Drug Safety Analyzer
 
-## Getting Started
+An AI-powered pediatric drug safety analysis application built with Next.js, Framer Motion, and raw FDA FAERS data.
 
-First, run the development server:
+## Features
+- **Comparative ML Risk Model**: Statistical analysis comparing pediatric vs. adult adverse event probabilities.
+- **Predictive DDI Engine**: Predicts potential drug-drug interactions based on adverse effect profile similarities.
+- **Medication Tracker**: Support for multi-drug regimens and personalized schedules.
+- **Drug Allergy Warning**: Automatic cross-referencing of medication sets against user allergy profiles.
+- **Age-Based Analysis**: Deep physiological insights based on the patient's age.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tech Stack
+- **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS, Framer Motion, Recharts.
+- **ML Engine**: Bayesian-style statistical modeling on FDA FAERS datasets.
+- **Icons**: Lucide React.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deployment on Vercel
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+This project is ready to be deployed on Vercel. 
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Steps:
+1. Push this code to your GitHub repository.
+2. Go to [Vercel](https://vercel.com) and click **"New Project"**.
+3. Import your repository.
+4. Add an environment variable (optional but recommended):
+   - `JWT_SECRET`: A long random string for securing user sessions.
+5. Click **Deploy**.
 
-## Learn More
+### Important Note on Persistence:
+The current version uses local JSON files in `data/db/` for user and medication storage. Because Vercel uses serverless functions with a read-only filesystem, **data will not persist across redeploys**. 
 
-To learn more about Next.js, take a look at the following resources:
+For production use, it is recommended to connect a real database like **Vercel Postgres** or **MongoDB** and update `lib/db/index.js` to use a database driver instead of `fs`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Local Development
+1. Clone the repository.
+2. Install dependencies: `npm install`
+3. Run the dev server: `npm run dev`
+4. Open `http://localhost:3000` in your browser.
